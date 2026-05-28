@@ -22,7 +22,7 @@ app.use( express.json() )
 
 // Endpoints & functions
 app.post('/', (request, response) => {
-    const { points } = request.body;
+    const points = request.body;
 
     if (!points["score"]) {
         gamePoints["score"] = 0;
@@ -47,7 +47,7 @@ app.post('/', (request, response) => {
 
 app.post('/reset', (request, response) => {
     // const { id } = request.params;
-    const { points } = request.body;
+    const points = request.body;
 
     // if (id not in clients_ids) {clients_ids.push(id);}
 
@@ -122,6 +122,4 @@ function checkForObjectivesStructs(struct) {
     return false
 }
 
-function checkClients(ids) {
-    
-}
+//function checkClients(ids) {}
