@@ -2,42 +2,71 @@ const express = require('express');
 const app = express();
 const port = 8080;
 
+const clamp = (num, min, max) => Math.min(Math.max(num, min), max)
+
+//var client_ids = [] -> for simulation
 var tempScore = 0;
 let gamePoints = {
     score: 0,
-    objectives: 2
+    objectives: 0
 }
 
-// state middleman & listen on port
-app.use(express.json())
-
+// listen on port
 app.listen(
     port,
     () => console.log("running.")
 )
 
+// state middleman
+app.use( express.json() )
+
 // Endpoints & functions
 app.post('/', (request, response) => {
-    const {data} = request.body;
+    const { points } = request.body;
 
-    //handle invalid formats + invalid values
-    if (!data) {
-        response.status(400).send('No data. No response.')
-    } else if (data.score > 1 || data.score < -1) {
-        response.status(410).send('Invalid score value. Only -1 to 1 is accessible.')
+    if (!points["score"]) {
+        gamePoints["score"] = 0;
+    }
+    
+    // Replace objectives values
+    for (var item in points) {
+        if (item.search('obj') != -1 && item != "objectives") {
+            for (var key in points[item]) {
+                if (points[item][key] != 0) {
+                    gamePoints[item][key] = points[item][key]
+                } 
+            }
+        }
     }
 
-    response.status(240).send(data);
+    // debug the points & send updated score back.
+    console.log(points);
+    response.send(countScore(gamePoints));
 
-})
-
-app.get('/score', (request, response) => {
-    console.log('GET request on /score \nSending game points with updated score.')
-    response.status(200).send(countScore(gamePoints));
 })
 
 app.post('/reset', (request, response) => {
-    response.statusCode(240).send('Resetting game points.')
+    // const { id } = request.params;
+    const { points } = request.body;
+
+    // if (id not in clients_ids) {clients_ids.push(id);}
+
+    if (!points["objectives"]) {
+        response.status(440).send({
+            message: "No specified objectives."
+        })
+    }
+
+    // reset game points
+    gamePoints = {
+        score: 0,
+        objectives: points["objectives"]
+    }
+
+    // call function to create structs for objectives
+    createObjectiveStructs(gamePoints);
+    console.log('Resetting game points.\nCreating new Objective structs\n')
+    response.send(gamePoints)
 })
 
 // Functions
@@ -60,7 +89,7 @@ function countScore(struct) {
     }
 
     // count the score
-    var newScore = clamp((pointsLight - pointsDark) / 100, -1, 1)
+    var newScore = parseFloat(clamp((pointsLight - pointsDark) / 100, -1, 1).toFixed(2));
     console.log('Recounted score: ' + newScore);
     struct['score'] = newScore;
     return struct
@@ -80,4 +109,19 @@ function createObjectiveStructs(struct) {
     return struct
 }
 
-createObjectiveStructs(gamePoints);
+// Minor functions
+function checkForObjectivesStructs(struct) {
+    for (var item in struct) {
+        if (item.search('obj') != -1 && item != "objectives") {
+            if (struct[item][light] || struct[item][dark]
+            ) {
+                return true
+            }
+        }
+    }
+    return false
+}
+
+function checkClients(ids) {
+    
+}
