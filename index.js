@@ -5,15 +5,7 @@ const port = 8080;
 var tempScore = 0;
 let gamePoints = {
     score: 0,
-    objectives: 0,
-    objOne: {
-        light: 45,
-        dark: 80
-    },
-    objTwo: {
-        light: 70,
-        dark: 45
-    }
+    objectives: 2
 }
 
 // state middleman & listen on port
@@ -25,27 +17,27 @@ app.listen(
 )
 
 // Endpoints & functions
-app.get('/', (res,req) => {
-    res.statusCode(200).send(gamePoints)
-})
-
-app.post('/', (res,req) => {
-    const {data} = req.body;
+app.post('/', (request, response) => {
+    const {data} = request.body;
 
     //handle invalid formats + invalid values
     if (!data) {
-        res.status(400).send('No data. No response.')
+        response.status(400).send('No data. No response.')
     } else if (data.score > 1 || data.score < -1) {
-        res.status(410).send('Invalid score value. Only -1 to 1 is accessible.')
+        response.status(410).send('Invalid score value. Only -1 to 1 is accessible.')
     }
 
-    res.status(240).send(data);
+    response.status(240).send(data);
 
 })
 
-app.get('/score', (res,req) => {
-    var score = 0;
-    res.statusCode(200).send(gamePoints);
+app.get('/score', (request, response) => {
+    console.log('GET request on /score \nSending game points with updated score.')
+    response.status(200).send(countScore(gamePoints));
+})
+
+app.post('/reset', (request, response) => {
+    response.statusCode(240).send('Resetting game points.')
 })
 
 // Functions
@@ -68,8 +60,24 @@ function countScore(struct) {
     }
 
     // count the score
-    console.log('Recounted score: ' + (pointsLight - pointsDark) / 100)
-    return (pointsLight - pointsDark) / 100
+    var newScore = clamp((pointsLight - pointsDark) / 100, -1, 1)
+    console.log('Recounted score: ' + newScore);
+    struct['score'] = newScore;
+    return struct
 }
 
-countScore(gamePoints);
+function createObjectiveStructs(struct) {
+    var numObjs = struct['objectives'];
+    let i = 1;
+    while (i <= numObjs) {
+       let tempObj = new Object();
+       tempObj.light = 0;
+       tempObj.dark = 0;
+       struct['obj' + i] = tempObj;
+       i++;
+    }
+    console.log(struct)
+    return struct
+}
+
+createObjectiveStructs(gamePoints);
