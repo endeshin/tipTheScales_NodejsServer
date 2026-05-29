@@ -5,7 +5,6 @@ const port = 8080;
 const clamp = (num, min, max) => Math.min(Math.max(num, min), max)
 
 //var client_ids = [] -> for simulation
-var tempScore = 0;
 let gamePoints = {
     score: 0,
     objectives: 0
@@ -20,7 +19,7 @@ app.listen(
 // state middleman
 app.use( express.json() )
 
-// Endpoints & functions
+// Endpoints
 app.post('/', (request, response) => {
     const points = request.body;
 
@@ -73,7 +72,6 @@ app.post('/reset', (request, response) => {
 function countScore(struct) {
     var pointsLight = 0;
     var pointsDark = 0;
-    var tempScore = struct.score;
 
     //per item, save the points
     for (var item in struct) {
