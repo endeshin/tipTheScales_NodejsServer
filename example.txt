@@ -1,4 +1,4 @@
-This is am example of how the server will expect the data to look like and how it will sent back modified.
+This is am example of how the server will expect the data to look like and how it will sent back modified. PLEASE ONLY USE ONE SPECIFIC ID FOR ALL INTERACTIONS.
 
 -> When calling /reset/:id
 {

@@ -32,7 +32,7 @@ app.post('/:id', (request, response) => {
     // Add client ID
     if (!client_ids[id]) {
         // If id is not saved, alert the client.
-        response.status(400).send("Unknown ID, please run /reset/{yourID} first!");
+        response.status(400).send({message: "Unknown ID, please run /reset/{yourID} first!"});
     } else {
         // If it's present, update time of triggering /reset
         client_ids[id] = new Date();
@@ -62,12 +62,6 @@ app.post('/:id', (request, response) => {
 
 })
 
-
-// Testing
-app.get("/", (request, response) => {
-    response.send('Hello.')
-})
-
 app.post('/reset/:id', (request, response) => {
     const { id } = request.params;
     const points = request.body;
@@ -82,6 +76,7 @@ app.post('/reset/:id', (request, response) => {
         response.status(400).send({
             message: "No specified objectives."
         })
+    // If a client is not tracked when there are too many clients
     } else if (Object.keys(removeInactiveClients(client_ids)).length > 2 || !client_ids[id]) {
         response.status(400).send({message: "Too many clients. Allowed only 2 clients."});
         delete client_ids[id];
@@ -91,7 +86,7 @@ app.post('/reset/:id', (request, response) => {
 
     // if there are two clients
     if (Object.keys(removeInactiveClients(client_ids)).length == 2) {
-            if (checkForObjectivesStructs(gamePoints, points["objectives"])) {
+            if (checkForObjectivesStructs(gamePoints, points['objectives'])) {
                 // If they match, reset the game points
                 gamePoints = {
                     score: 0,
@@ -121,15 +116,15 @@ app.post('/reset/:id', (request, response) => {
             response.send(gamePoints);
     }
 
-    // call function to create structs for objectives
     //response.send(gamePoints);
     console.log(id);
     console.log(client_ids);
 })
 
-app.get('/sim', (request, response) => {
+app.get('/status', (request, response) => {
     response.send(simulation)
 })
+
 
 // Functions
 function countScore(struct) {
@@ -197,5 +192,20 @@ function removeInactiveClients(struct){
             delete struct[client];
         }
     }
+
+    //if there are no clients, reset the gamePoints
+    if (!client_ids) {
+        gamePoints = {
+            score = 0,
+            objectives = 0
+        }
+    }
+
     return struct
 }
+
+
+// Testing
+app.get("/", (request, response) => {
+    response.send('Hello.')
+})
