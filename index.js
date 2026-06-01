@@ -12,11 +12,7 @@ let simulation = false;
 
 let gamePoints = {
     score: 0,
-    objectives: 0 //,
-    //kills: {
-    //    light: 0,
-    //    dark: 0
-    //}
+    objectives: 0
 }
 
 // listen on port
@@ -36,7 +32,7 @@ app.post('/:id', (request, response) => {
     // Add client ID
     if (!client_ids[id]) {
         // If id is not saved, alert the client.
-        response.status(400).send("Unknown ID, please run /reset first!");
+        response.status(400).send("Unknown ID, please run /reset/{yourID} first!");
     } else {
         // If it's present, update time of triggering /reset
         client_ids[id] = new Date();
@@ -61,44 +57,59 @@ app.post('/:id', (request, response) => {
 
     // debug the points & send updated score back.
     console.log(points);
+    console.log(client_ids);
     response.send(countScore(gamePoints));
 
+})
+
+
+// Testing
+app.get("/", (request, response) => {
+    response.send('Hello.')
 })
 
 app.post('/reset/:id', (request, response) => {
     const { id } = request.params;
     const points = request.body;
 
-    // Add client ID
-    if (!client_ids[id]) {
-        // Track the time of triggering /reset
-        client_ids[id] = new Date();
-    } else {
-        // If it's present, update time of triggering /reset
-        client_ids[id] = new Date();
-    }
+    response.setHeader('Content-Type', 'application/json');
+
+    // Add client ID / update timestamp
+    client_ids[id] = new Date();
 
     //Throw error when objectives are not specified
     if (!points["objectives"]) {
-        response.status(440).send({
+        response.status(400).send({
             message: "No specified objectives."
         })
+    } else if (Object.keys(removeInactiveClients(client_ids)).length > 2 || !client_ids[id]) {
+        response.status(400).send({message: "Too many clients. Allowed only 2 clients."});
+        delete client_ids[id];
     }
 
-    console.log('Resetting game points.\nCreating new Objective structs\n')
+    console.log('Resetting game points.\nCreating new Objective structs\n');
 
-    // reset game points when requirements are met -> at least two clients and struckt having it filled.
-    if (checkForObjectivesStructs(gamePoints) && Object.keys(removeInactiveClients).length >= 2) {
-            gamePoints = {
-                score: 0,
-                objectives: points["objectives"]
+    // if there are two clients
+    if (Object.keys(removeInactiveClients(client_ids)).length == 2) {
+            if (checkForObjectivesStructs(gamePoints, points["objectives"])) {
+                // If they match, reset the game points
+                gamePoints = {
+                    score: 0,
+                    objectives: points["objectives"]
+                }
+                createObjectiveStructs(gamePoints);
+                console.log('Reset made by ID ' + id);
+                simulation = false;
+                response.send(gamePoints);
+            } else {
+                // if they don't match, send an error.
+                response.send({message: "Incorrect amount of objectives.", objectives: gamePoints['objectives']});
+                delete client_ids[id];
             }
-            createObjectiveStructs(gamePoints);
-            console.log('Reset made by ID ' + id);
-            simulation = false;
 
-    } else if (Object.keys(removeInactiveClients).length < 2) {
-        // If there is only one client, or other client no longerthrow simulation
+    // if there is only one client
+    } else if (Object.keys(removeInactiveClients(client_ids)).length < 2) {
+        // If there is only one client, or other client no longer, throw simulation
             gamePoints = {
                 score: 0,
                 objectives: points["objectives"]
@@ -107,11 +118,13 @@ app.post('/reset/:id', (request, response) => {
             console.log('Reset made by ID ' + id + '\nBegining simulation.')
             simulation = true;
             //serverSimulate();
-
+            response.send(gamePoints);
     }
 
     // call function to create structs for objectives
-    response.send(gamePoints);
+    //response.send(gamePoints);
+    console.log(id);
+    console.log(client_ids);
 })
 
 app.get('/sim', (request, response) => {
@@ -163,25 +176,24 @@ function createObjectiveStructs(struct) {
 }
 
 // Minor functions
-function checkForObjectivesStructs(struct) {
+function checkForObjectivesStructs(struct, objs) {
+    i = 0;
     for (var item in struct) {
         if (item.search('obj') != -1 && item != "objectives") {
-            if (struct[item]["light"] || struct[item]["dark"]
-            ) {
-                return true
-            }
+            i++;
         }
     }
-    return false
+    console.log(i, objs)
+    return i == objs;
 }
 
 // check for clients' last time.
 function removeInactiveClients(struct){
     var currentTime = new Date();
     
-    // If the last request from client was 5 minutes ago, remove the client from client_ids.
+    // If the last request from client was 2 minutes ago, remove the client from client_ids.
     for (client in struct){
-        if (((struct[client] - currentTime) / 60) >= -5001) {
+        if (((struct[client] - currentTime) / 60) <= -2001) {
             delete struct[client];
         }
     }
