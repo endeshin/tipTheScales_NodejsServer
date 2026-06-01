@@ -1,0 +1,47 @@
+This is am example of how the server will expect the data to look like and how it will sent back modified.
+
+-> When calling /reset/:id
+{
+    "objectives": 2
+} 
+Response (It will create objects based on number of objectives):
+{
+    "score": 0,
+    "objectives": 2,
+    "obj1": {
+        "light": 0,
+        "dark": 0
+    },
+    "obj2": {
+        "light": 0,
+        "dark": 0
+    }
+}
+
+-> When calling /:id (light example)
+{
+    "score": 0,
+    "objectives": 2,
+    "obj1": {
+        "light": 7,
+        "dark": 0
+    },
+    "obj2": {
+        "light": 7,
+        "dark": 0
+    }
+}
+Response (It will only change score):
+{
+    "score": 1,
+    "objectives": 2,
+    "obj1": {
+        "light": 7,
+        "dark": 0
+    },
+    "obj2": {
+        "light": 7,
+        "dark": 0
+    }
+
+}

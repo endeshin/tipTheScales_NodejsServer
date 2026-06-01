@@ -12,7 +12,11 @@ let simulation = false;
 
 let gamePoints = {
     score: 0,
-    objectives: 0
+    objectives: 0 //,
+    //kills: {
+    //    light: 0,
+    //    dark: 0
+    //}
 }
 
 // listen on port
@@ -30,21 +34,21 @@ app.post('/:id', (request, response) => {
     const points = request.body;
 
     // Add client ID
-    if (!clients_ids[id]) {
+    if (!client_ids[id]) {
         // If id is not saved, alert the client.
         response.status(400).send("Unknown ID, please run /reset first!");
     } else {
         // If it's present, update time of triggering /reset
-        clients_ids[id] = new Date();
+        client_ids[id] = new Date();
     }
 
     if (!points["score"]) {
         gamePoints["score"] = 0;
     }
     
-    // Replace objectives values
+    // Replace objectives values & kills
     for (var item in points) {
-        if (item.search('obj') != -1 && item != "objectives") {
+        if (item.search('obj') != -1 && item != "objectives") { //|| item == "kills"
             for (var key in points[item]) {
                 if (points[item][key] != 0) {
                     gamePoints[item][key] = points[item][key]
@@ -52,6 +56,8 @@ app.post('/:id', (request, response) => {
             }
         }
     }
+
+    // Replace kills
 
     // debug the points & send updated score back.
     console.log(points);
