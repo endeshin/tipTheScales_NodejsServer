@@ -90,7 +90,7 @@ app.post('/reset/:id', (request, response) => {
                 // If they match, reset the game points
                 gamePoints = {
                     score: 0,
-                    objectives: points["objectives"]
+                    objectives: Number(points["objectives"])
                 }
                 createObjectiveStructs(gamePoints);
                 console.log('Reset made by ID ' + id);
@@ -107,7 +107,7 @@ app.post('/reset/:id', (request, response) => {
         // If there is only one client, or other client no longer, throw simulation
             gamePoints = {
                 score: 0,
-                objectives: points["objectives"]
+                objectives: Number(points["objectives"])
             }
             createObjectiveStructs(gamePoints);
             console.log('Reset made by ID ' + id + '\nBegining simulation.')
@@ -122,7 +122,11 @@ app.post('/reset/:id', (request, response) => {
 })
 
 app.get('/status', (request, response) => {
-    response.send(simulation)
+    console.log("Returning Simulation state.")
+    response.send({
+        simulating: simulation,
+        gamepoints: gamePoints
+    })
 })
 
 
@@ -196,16 +200,10 @@ function removeInactiveClients(struct){
     //if there are no clients, reset the gamePoints
     if (!client_ids) {
         gamePoints = {
-            score = 0,
-            objectives = 0
+            score: 0,
+            objectives: 0
         }
     }
 
     return struct
 }
-
-
-// Testing
-app.get("/", (request, response) => {
-    response.send('Hello.')
-})
