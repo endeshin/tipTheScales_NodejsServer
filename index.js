@@ -1,6 +1,7 @@
 const express = require('express');
 const app = express();
 const port = 8080;
+//require("simulation.js");
 
 const clamp = (num, min, max) => Math.min(Math.max(num, min), max)
 
@@ -12,7 +13,10 @@ let simulation = false;
 
 let gamePoints = {
     score: 0,
-    objectives: 0
+    objectives: 0,
+    playersAlive: {
+        // {id} : true (alive) / false (dead)
+    }
 }
 
 // listen on port
@@ -38,8 +42,8 @@ app.post('/:id', (request, response) => {
         client_ids[id] = new Date();
     }
 
-    if (!points["score"]) {
-        gamePoints["score"] = 0;
+    if (simulation === true){
+        //serverSimulate();
     }
     
     // Replace objectives values & kills
@@ -47,13 +51,11 @@ app.post('/:id', (request, response) => {
         if (item.search('obj') != -1 && item != "objectives") { //|| item == "kills"
             for (var key in points[item]) {
                 if (points[item][key] != 0) {
-                    gamePoints[item][key] = points[item][key]
+                    gamePoints[item][key] = Number(points[item][key])
                 } 
             }
         }
     }
-
-    // Replace kills
 
     // debug the points & send updated score back.
     console.log(points);
@@ -82,7 +84,7 @@ app.post('/reset/:id', (request, response) => {
         delete client_ids[id];
     }
 
-    console.log('Resetting game points.\nCreating new Objective structs\n');
+    //console.log('Resetting game points.\nCreating new Objective structs\n');
 
     // if there are two clients
     if (Object.keys(removeInactiveClients(client_ids)).length == 2) {
@@ -90,8 +92,16 @@ app.post('/reset/:id', (request, response) => {
                 // If they match, reset the game points
                 gamePoints = {
                     score: 0,
-                    objectives: Number(points["objectives"])
+                    objectives: Number(points["objectives"]),
+                    playersAlive: {}
                 }
+
+                IDs = Object.keys(client_ids)
+                console.log("IDs: "+IDs)
+                for (ID in IDs) {
+                    gamePoints.playersAlive[IDs[ID]] = true
+                }
+
                 createObjectiveStructs(gamePoints);
                 console.log('Reset made by ID ' + id);
                 simulation = false;
@@ -107,12 +117,13 @@ app.post('/reset/:id', (request, response) => {
         // If there is only one client, or other client no longer, throw simulation
             gamePoints = {
                 score: 0,
-                objectives: Number(points["objectives"])
+                objectives: Number(points["objectives"]),
+                playersAlive: {}
             }
+            gamePoints.playersAlive[id] = true
             createObjectiveStructs(gamePoints);
             console.log('Reset made by ID ' + id + '\nBegining simulation.')
             simulation = true;
-            //serverSimulate();
             response.send(gamePoints);
     }
 
@@ -127,6 +138,24 @@ app.get('/status', (request, response) => {
         simulating: simulation,
         gamepoints: gamePoints
     })
+})
+
+app.post('/death/:id', (request,response) => {
+    const {id} = request.params;
+
+    // Add client ID
+    if (!client_ids[id]) {
+        // If id is not saved, alert the client.
+        response.status(400).send({message: "Unknown ID, please run /reset/{yourID} first!"});
+    } else {
+        // If it's present, update time of triggering /reset
+        client_ids[id] = new Date();
+    }
+
+    gamePoints.playersAlive[id] = false;
+    console.log('Player '+ id + ' died.')
+    console.log(client_ids)
+    response.send(gamePoints.playersAlive)
 })
 
 
@@ -152,7 +181,7 @@ function countScore(struct) {
     var newScore = parseFloat(clamp((pointsLight - pointsDark) / 100, -1, 1).toFixed(2));
     console.log('Recounted score: ' + newScore);
     struct['score'] = newScore;
-    return struct
+    return struct;
 }
 
 function createObjectiveStructs(struct) {
@@ -206,4 +235,8 @@ function removeInactiveClients(struct){
     }
 
     return struct
+}
+
+function serverSimulate(struct) {
+    //
 }
